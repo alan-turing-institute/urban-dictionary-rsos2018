@@ -1,6 +1,6 @@
 # Urban Dictionary
 
-This repository contains annotations and R analysis code for the Royal Society Open Science article *Emo, love, and god: Making sense of Urban Dictionary, a crowd-sourced online dictionar* by Nguyen, McGillivray and Yasseri.
+This repository contains annotations and R analysis code for the Royal Society Open Science article *Emo, love, and god: Making sense of Urban Dictionary, a crowd-sourced online dictionary* by Nguyen, McGillivray and Yasseri.
 
 Please contact Dong Nguyen if you have any questions.
 # Data
