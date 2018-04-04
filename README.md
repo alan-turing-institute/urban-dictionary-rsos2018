@@ -9,7 +9,7 @@ Please contact Dong Nguyen if you have any questions.
 
 * offensive\_annotations\_merged.csv: This file contains the crowdsourced annotations on the offensiveness of the content.
 
-#Code
+# Code
 
 * content\_types.rmd: R code for analyzing aspects of the content in Urban Dictionary
 * offensiveness.rmd: R code for analyzing the offensivess of the content.
