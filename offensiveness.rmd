@@ -1,0 +1,51 @@
+---
+title: "Offensiveness analysis"
+author: "Dong Nguyen"
+date: "02/12/2017"
+output: html_document
+self_contained: no
+---
+  
+  
+```{r opts, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "images/", 
+  dev      = c("pdf", "png")
+  
+)
+library(ggplot2)
+```
+
+## Load the data 
+```{r datamerged}
+data_merged <- read.csv("offensive_annotations_merged.csv")
+dim(data_merged)
+```
+
+## Reverse the ranking because of presentation purposes
+```{r reverse_ranking}
+data_merged$average_ranking_reversed <- 3 - data_merged$average_ranking + 1
+```
+
+## Offensive per type
+```{r offensive_type}
+aggregate(average_ranking_reversed ~ proper_noun, data=data_merged, mean)
+summary(aov(average_ranking_reversed ~ proper_noun, data = data_merged))
+
+aggregate(average_ranking_reversed ~ meaning_opinion, data=data_merged, mean)
+a1 <-aov(average_ranking_reversed ~ meaning_opinion, data = data_merged)
+summary(a1)
+
+TukeyHSD(a1)
+
+aggregate(average_ranking_reversed ~ familiar, data=data_merged, mean)
+t.test(data_merged$average_ranking_reversed ~ data_merged$familiar)
+
+aggregate(average_ranking_reversed ~ formal, data=data_merged, mean)
+a1 <- aov(average_ranking_reversed ~ formal, data = data_merged)
+summary(a1)
+
+TukeyHSD(a1)
+
+```
+

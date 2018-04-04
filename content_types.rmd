@@ -1,0 +1,203 @@
+---
+title: "Content Types"
+author: "Dong Nguyen"
+date: "04/10/2017"
+output: html_document
+self_contained: no
+---
+
+
+```{r opts, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "images/", 
+  dev      = c("pdf", "png")
+  
+)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+add_conf_interval <- function(d, prop_data) {
+  ### add confidence interval to data
+  ### d: the data frame with the data
+  ### prop_data: a dataframe with the proportions in the Freq column 
+  counts <-  as.data.frame(count(d, log_bin)) # number of items in each log bin
+  prop_data <- merge(prop_data, counts)
+  prop_data$SE <- sqrt(prop_data$Freq*(1-prop_data$Freq)/prop_data$n)
+  prop_data$margin_error <- qnorm(.975)*prop_data$SE #95% confindence interval
+  prop_data$interval_min <- prop_data$Freq - prop_data$margin_error
+  prop_data$interval_max <- prop_data$Freq + prop_data$margin_error
+  return(prop_data)
+}
+```
+
+## Load the data
+
+
+```{r data}
+data <- read.csv("content_type_annotations_merged.csv")
+
+dim(data)
+
+data_proper_nouns <- data[data$proper_noun == 'proper_noun_yes',]
+data_no_proper_nouns <- data[data$proper_noun == 'proper_noun_no',]
+data_no_proper_nouns_no_opinions <- data_no_proper_nouns[data_no_proper_nouns$meaning_opinion != "opinion",]
+dim(data_no_proper_nouns_no_opinions)
+table(data$log_bin)
+```
+
+## Proportion of proper nouns
+
+```{r prop_proper_nouns}
+dim(data_proper_nouns)/dim(data)
+
+x_data <- xtabs(~proper_noun + log_bin, data)
+tmp <- prop.table(x_data, margin=2)  
+tmp <- as.data.frame(tmp)
+tmp <- add_conf_interval(data, tmp)
+
+  
+tmp$proper_noun <- gsub('proper_noun_', '', tmp$proper_noun)
+ggplot(data=tmp, aes(x=log_bin, y=Freq, group=proper_noun)) +
+   geom_line(aes(linetype=proper_noun, color=proper_noun), size=1.2) + 
+   geom_point(aes(shape=proper_noun)) + labs(x="Frequency bin",y="Proportion")  + theme_bw() +
+    geom_ribbon(aes(ymin=interval_min, ymax=interval_max, x=log_bin, fill = "band"), 
+                alpha = 0.3, show.legend=FALSE, fill = "grey70")+
+    theme(axis.text=element_text(size=22),
+        axis.title=element_text(size=24),
+        legend.text=element_text(size=25),
+        legend.title=element_text(size=28),legend.position=c(0.3,0.5),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + scale_shape_discrete(name="Proper noun?") + scale_colour_discrete(name="Proper noun?") + scale_linetype(name="Proper noun?") +  ylim(0, 1)
+
+
+```
+
+## Opinion vs definition
+
+```{r opinion}
+x_data <- xtabs(~meaning_opinion + log_bin, data_no_proper_nouns)
+tmp <- prop.table(x_data, margin=2) 
+```
+
+
+
+```{r opinion_graph}
+tmp <- as.data.frame(tmp)
+tmp <- add_conf_interval(data_no_proper_nouns, tmp)
+
+ggplot(data=tmp, aes(x=log_bin, y=Freq, group=meaning_opinion)) +
+   geom_line(aes(linetype=meaning_opinion, color=meaning_opinion), size=1.2) + 
+   geom_point(aes(shape=meaning_opinion)) + labs(x="Frequency bin",y="Proportion") + theme_bw() +
+   geom_ribbon(aes(ymin=interval_min, ymax=interval_max, x=log_bin, fill = "band"), alpha = 0.3, show.legend=FALSE, fill = "grey70")+
+   theme(axis.text=element_text(size=22),
+        axis.title=element_text(size=24),
+        legend.text=element_text(size=25),
+        legend.title=element_text(size=28),legend.position=c(0.4,0.5), panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + scale_shape_discrete(name="Meaning or opinion?") + scale_colour_discrete(name="Meaning or opinion?") + scale_linetype(name="Meaning or opinion?") +  coord_cartesian(ylim = c(0,1)) 
+
+
+```
+
+## Familiarity (no opinions)
+
+```{r familiair_meaning}
+x_data <- xtabs(~familiar + log_bin, data_no_proper_nouns_no_opinions)
+tmp <- prop.table(x_data, margin=2)  
+```
+
+```{r familiar_graph_meaning}
+tmp <- as.data.frame(tmp)
+tmp <- add_conf_interval(data_no_proper_nouns_no_opinions, tmp)
+
+tmp$familiar <- gsub('familiar_', '', tmp$familiar)
+ggplot(data=tmp, aes(x=log_bin, y=Freq, group=familiar)) +
+   geom_line(aes(linetype=familiar, color=familiar), size=1.2) + 
+   geom_point(aes(shape=familiar)) + labs(x="Frequency bin",y="Proportion") +  theme_bw()+
+    geom_ribbon(aes(ymin=interval_min, ymax=interval_max, x=log_bin, fill = "band"), 
+                alpha = 0.3, show.legend=FALSE, fill = "grey70")+
+    theme(axis.text=element_text(size=22),
+        axis.title=element_text(size=24),
+        legend.text=element_text(size=25),
+        legend.title=element_text(size=28),legend.position=c(0.2,0.5),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+```
+
+
+## Formality (no opinions)
+
+```{r formality_meaning}
+x_data <- xtabs(~formal + log_bin, data_no_proper_nouns_no_opinions)
+tmp <- prop.table(x_data, margin=2) 
+tmp <- as.data.frame(tmp)
+tmp <- add_conf_interval(data_no_proper_nouns_no_opinions, tmp)
+
+tmp$formal <- gsub('formal_', '', tmp$formal)
+ggplot(data=tmp, aes(x=log_bin, y=Freq, group=formal)) +
+   geom_line(aes(linetype=formal, color=formal), size=1.2) + 
+   geom_point(aes(shape=formal)) + labs(x="Frequency bin",y="Proportion")  + theme_bw() + 
+   geom_ribbon(aes(ymin=interval_min, ymax=interval_max, x=log_bin, fill = "band"), 
+               alpha = 0.3, show.legend=FALSE, fill = "grey70")+
+    theme(axis.text=element_text(size=22),
+        axis.title=element_text(size=24),
+        legend.text=element_text(size=25),
+        legend.title=element_text(size=28),legend.position=c(0.2,0.5),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +  coord_cartesian(ylim = c(0,1))  
+
+
+```
+
+## Opinion vs definition (proper nouns)
+
+```{r opinion_proper_nouns}
+x_data <- xtabs(~meaning_opinion + log_bin, data_proper_nouns)
+tmp<-prop.table(x_data, margin=2)  
+```
+
+```{r opinion_graph_proper_noun}
+tmp <- as.data.frame(tmp)
+tmp <- add_conf_interval(data_proper_nouns, tmp)
+
+ggplot(data=tmp, aes(x=log_bin, y=Freq, group=meaning_opinion)) +
+   geom_line(aes(linetype=meaning_opinion, color=meaning_opinion), size=1.2) + 
+   geom_point(aes(shape=meaning_opinion)) + labs(x="Frequency bin",y="Proportion") + theme_bw()+
+   geom_ribbon(aes(ymin=interval_min, ymax=interval_max, x=log_bin, fill = "band"), 
+               alpha = 0.3, show.legend=FALSE, fill = "grey70")+
+   theme(axis.text=element_text(size=22),
+        axis.title=element_text(size=24),
+        legend.text=element_text(size=25),
+        legend.title=element_text(size=28),legend.position=c(0.7,0.8),
+        legend.background = element_rect(fill=alpha('white', 0.0)),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + scale_shape_discrete(name="Meaning or opinion?") + scale_colour_discrete(name="Meaning or opinion?") + scale_linetype(name="Meaning or opinion?") +  coord_cartesian(ylim = c(0,1)) 
+
+```
+
+## Agreement analysis
+
+# Agreement: familiar
+```{r agreement_familiar}
+library(irr)
+print("familiar")
+kappam.fleiss(data[7:9])
+kripp.alpha(as.matrix(t(data[7:9])), method="nominal")
+```
+# Agreement: formal
+```{r agreement_formal}
+kappam.fleiss(data[11:13])
+kripp.alpha(as.matrix(t(data[11:13])), method="nominal")
+```
+# Agreement: meaning/opinion
+```{r agreement_meaning_opinion}
+kappam.fleiss(data[15:17])
+kripp.alpha(as.matrix(t(data[15:17])), method="nominal")
+```
+# Agreement: proper noun
+```{r agreement_proper_noun}
+kappam.fleiss(data[19:21])
+kripp.alpha(as.matrix(t(data[19:21])), method="nominal")
+```

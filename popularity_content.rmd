@@ -1,0 +1,122 @@
+---
+title: "popularity_content"
+author: "Dong Nguyen"
+date: "02/12/2017"
+output: html_document
+self_contained: no
+---
+
+
+```{r opts, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "images/", 
+  dev      = c("pdf", "png")
+  
+)
+library(ggplot2)
+```
+
+
+## Load the merged data
+
+
+```{r datamerged}
+data_merged <- read.csv("offensive_annotations_merged.csv")
+dim(data_merged)
+```
+
+## Reverse the ranking because of presentation purposes
+```{r reverse_ranking}
+data_merged$average_ranking_reversed <- 3 - data_merged$average_ranking + 1
+data_merged$place <- factor(data_merged$place) 
+```
+
+## Filter opinions and proper nouns
+
+```{r filtering}
+data_no_proper_nouns_no_opinions <- data_merged[data_merged$meaning_opinion != "opinion",]
+data_no_proper_nouns_no_opinions <- data_no_proper_nouns_no_opinions[data_no_proper_nouns_no_opinions$proper_noun == "proper_noun_no",]
+
+dim(data_no_proper_nouns_no_opinions)
+```
+
+## Familiar
+```{r familiar}
+x_data <- xtabs(~familiar + place, data_no_proper_nouns_no_opinions)
+prop.table(x_data, margin=2)  
+chisq.test(data_no_proper_nouns_no_opinions$familiar, data_no_proper_nouns_no_opinions$place, correct=FALSE)
+```
+
+
+## Offensiveness
+```{r offensive_place_no_proper_noun_no_opinion}
+aggregate(average_ranking_reversed ~ place, data=data_no_proper_nouns_no_opinions, mean)
+aggregate(average_ranking_reversed ~ place, data=data_no_proper_nouns_no_opinions, sd)
+a1 <- aov(average_ranking_reversed ~ place, data = data_no_proper_nouns_no_opinions)
+summary(a1)
+TukeyHSD(a1)
+```
+
+## Offensiveness (all data)
+```{r offensive_place}
+a1 <- aov(average_ranking_reversed ~ place, data = data_merged)
+summary(a1)
+TukeyHSD(a1)
+```
+
+## Formal
+```{r formal}
+
+x_data <- xtabs(~formal + place, data_no_proper_nouns_no_opinions)
+prop.table(x_data, margin=2)  
+chisq.test(data_no_proper_nouns_no_opinions$formal, data_no_proper_nouns_no_opinions$place, correct=FALSE)
+```
+
+
+## Opinion/meaning
+
+
+```{r opinion_meaning_no_proper_nouns}
+data_no_proper_nouns <- data_merged[data_merged$proper_noun == "proper_noun_no",]
+
+dim(data_no_proper_nouns)
+
+x_data <- xtabs(~meaning_opinion + place, data_no_proper_nouns)
+prop.table(x_data, margin=2)  
+chisq.test(data_no_proper_nouns$meaning_opinion, data_no_proper_nouns$place, correct=FALSE)
+```
+
+## Opinion/meaning (proper nouns)
+
+
+```{r opinion_meaning_proper_nouns}
+data_proper_nouns <- data_merged[data_merged$proper_noun == "proper_noun_yes",]
+
+dim(data_proper_nouns)
+
+x_data <- xtabs(~meaning_opinion + place, data_proper_nouns)
+prop.table(x_data, margin=2)  
+chisq.test(data_proper_nouns$meaning_opinion, data_proper_nouns$place, correct=FALSE)
+```
+
+## All
+
+
+```{r all}
+data_no_proper_nouns_no_opinions$place <- as.numeric(data_no_proper_nouns_no_opinions$place)
+summary(lm(place ~ familiar  + formal + average_ranking_reversed, data=data_no_proper_nouns_no_opinions))
+
+```
+
+## Ordinal regression
+
+
+```{r all_ordered}
+ library(ordinal)
+data_no_proper_nouns_no_opinions$place <- factor(data_no_proper_nouns_no_opinions$place, ordered=TRUE)
+om1 <- clm(place ~ familiar  + formal + average_ranking_reversed, data=data_no_proper_nouns_no_opinions)
+summary(om1)
+nominal_test(om1)
+
+```
+
